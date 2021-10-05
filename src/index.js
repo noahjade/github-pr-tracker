@@ -28,6 +28,25 @@ function printWelcome(){
 
 function printResult(result){
    console.log(`# of open PRs: ${result}`);
+
+   // check if the user wants to search again
+   var questions = [
+        {
+        type: 'input',
+        name: 'action',
+        message: "Search again? y/n"
+        }
+    ]
+  
+    inquirer.prompt(questions).then(answers => {
+
+        if(answers['action'].toLowerCase() == 'yes' || answers['action'].toLowerCase() == 'y') {
+            Main();
+        } else {
+            console.log(`bye then!`);
+        }
+    })
+  
 }
 
 async function countPRs(repoOwner, repoName, count, page) {
