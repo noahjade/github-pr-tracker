@@ -26,24 +26,43 @@ function printWelcome(){
     );
 }
 
-async function countPRs(repoOwner, repoName) {
+function printResult(result){
+   console.log(`# of open PRs: ${result}`);
+}
 
+async function countPRs(repoOwner, repoName, count, page) {
     // The GitHub API limits results to 100 a request, so we need to iterate through the pages to count all PRs.
     // The maximum amount (100) are fetched per page to minimise requests and avoid throttling.
+    // By default, the API returns OPEN PRs, so only open PRs are counted.
 
     // todo: handle 404 errors
 
-    /* Test data to play with:
+    /* Available public repos to play with:
         octocat hello-world
         microsoft typescript
+        octokit octokit.js
     */
 
-    await octokit.request('GET /repos/{owner}/{repo}/pulls', {
+    await octokit.request('GET /repos/{owner}/{repo}/pulls?per_page=100&page={page}', {
         owner: repoOwner,
-        repo: repoName
+        repo: repoName,
+        page: page
     }).then(({ data }) => {
-        console.log(`we got: ${data.length}`);
+
+        count = count + data.length;
+
+        if(data.length == 100) {
+            // the maximum limit was reached, we need to check the next page
+            page = page + 1;
+            countPRs(repoOwner, repoName, count, page);
+        } else {
+            // if it didn't get to 100, then we will be on the last page.
+            printResult(count);
+        }
+
     });
+
+    
 
 }
 
@@ -69,7 +88,7 @@ function Main(){
     inquirer.prompt(questions).then(answers => {
         console.log(`Counting open PR requests for ${answers['owner']}/${answers['name']}!`)
         
-        countPRs(answers['owner'], answers['name']);
+        countPRs(answers['owner'], answers['name'], 0, 1);
 
     })
 
