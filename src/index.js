@@ -9,12 +9,15 @@ const octokit = new Octokit({
     baseUrl: 'https://api.github.com'
 });
 
+// formatting constants
+const textColour = "#108771";
+const hr = "-----------------------------------------------------------------------------";
 
 /** Helper function to print welcome message */ 
 function printWelcome(){
     console.log(
-        chalk.hex('#24B88F')(
-          figlet.textSync('Welcome to', { horizontalLayout: 'fitted' }) //todo: format these nicely
+        chalk.hex('#108771')(
+          figlet.textSync('Welcome to', { horizontalLayout: 'default', font: 'cyberlarge' })
         )
     );
 
@@ -28,13 +31,33 @@ function printWelcome(){
 
 /** Helper function to print the result and end the program */ 
 function printResult(result){
-    console.log(`# of open PRs: ${result}`);
+
+    console.log(
+        chalk.hex('#6DD8AA')(
+          figlet.textSync(`total open PRs:`, { horizontalLayout: 'default', font: 'cybermedium' }) 
+        )
+    );
+
+    console.log(
+        chalk.hex('#ffffff')(
+          figlet.textSync(`\t\t${result}\n`, { horizontalLayout: 'default' }) 
+        )
+    );
+        
+    // for accessibility
+    console.log(
+        chalk.hex('#108771')(
+          `[number of open prs: ${result}]`
+        )
+    );
 
     tryAgain();
-
 }
 
+/** Helper function to check with user whether they want to search again or quit */ 
 function tryAgain(){
+
+        console.log(`\n`); // spacing
 
         // check if the user wants to search again
         var questions = [
@@ -50,7 +73,12 @@ function tryAgain(){
             if(answers['action'].toLowerCase() == 'yes' || answers['action'].toLowerCase() == 'y') {
                 Main();
             } else {
-                console.log(`bye then!`);
+                console.log(
+                    chalk.hex('#6DD8AA')(
+                        `        __\n   (___()'\`;  < Bye!\n   /,    /\`  \n   \\\\"--\\\\` // this should be a dog :)
+                    )
+                ); 
+                
             }
         })
 }
@@ -68,13 +96,7 @@ function tryAgain(){
  * @param page  - the page # currently being investigated
  */
 async function countPRs(repoOwner, repoName, count, page) {
-
-    /* Available public repos to play with:
-        octocat hello-world
-        microsoft typescript
-        octokit octokit.js
-    */
-    
+  
     // The maximum amount (100) are fetched per page to minimise requests and avoid throttling.
     await octokit.request('GET /repos/{owner}/{repo}/pulls?per_page=100&page={page}', {
         owner: repoOwner,
@@ -95,26 +117,23 @@ async function countPRs(repoOwner, repoName, count, page) {
 
     }).catch( ( error ) =>
     {   
-        if (error.status == 404){
-            // the user likely entered invalid repo information
-            console.log(`${repoOwner}/${repoName} could not be found :(`);
-            tryAgain();
-        } else if (error.status == 429) {
-            // too many requests
-            console.log(`Sorry! The maximum number of requests has been made to the server, please try again later.`);
-            console.log(`Error: ${error}`);
-        } else if (error.status == 408) {
-            // timeout
-            console.log(`Sorry! The request timed out, please try again later.`);
-            console.log(`Error: ${error}`);
-        } else {
-            // another error occurred
-            console.log(`Error: ${error}`);
-        }
-        
+        switch(error.status) {
+            case 404:
+                console.log(`${repoOwner}/${repoName} could not be found :(`);
+                tryAgain();
+                break;
+            case 429:
+                console.log(`Sorry! The maximum number of requests has been made to the server, please try again later.`);
+                console.log(`Error: ${error}`);
+                break;
+            case 408:
+                console.log(`Sorry! The request timed out, please try again later.`);
+                console.log(`Error: ${error}`);
+                break;
+            default:
+                console.log(`Error: ${error}`);
+        }      
     });
-
-    
 
 }
 
@@ -136,14 +155,18 @@ function Main(){
             message: "What is the repo name?"
         }
       ]
-      
+    
+    // get input from user and then start counting
     inquirer.prompt(questions).then(answers => {
-        console.log(`Counting open PR requests for ${answers['owner']}/${answers['name']}!`)
+        console.log(
+            chalk.hex(textColour)(
+                `${hr} \n\tNow counting open pull requests for ${answers['owner']}/${answers['name']}! \n${hr}`
+            )
+        );
         
         countPRs(answers['owner'], answers['name'], 0, 1);
 
     })
-
 }
 
 
